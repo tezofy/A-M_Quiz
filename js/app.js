@@ -431,10 +431,14 @@ const gstore={
 
 function setMode(m){
   document.body.classList.toggle('mode-game',m==='game');
-  document.body.classList.toggle('mode-browse',m!=='game');
-  [['tabGame','game'],['tabBrowse','browse']].forEach(([id,mode])=>{
+  document.body.classList.toggle('mode-browse',m==='browse');
+  document.body.classList.toggle('mode-design',m==='design');
+  [['tabGame','game'],['tabBrowse','browse'],['tabDesign','design']].forEach(([id,mode])=>{
     const b=$(id);if(b)b.setAttribute('aria-pressed',String(mode===m));
   });
+  const dl=$('designLab'),nfc=$('nfcCard');
+  if(dl)dl.hidden=m!=='design';
+  if(nfc)nfc.hidden=m!=='design';
   try{localStorage.setItem('amQuizMode',m);}catch(e){}
   if(m==='game'){stopTimer();renderGameBar();openMap();}
   else{stopTimer();window.scrollTo({top:0,behavior:'smooth'});}
@@ -483,16 +487,15 @@ function renderGameBar(){
   bt.appendChild(el('small','','Integrated Advertising & Marketing Agency'));
   sBrand.appendChild(bt);
   slides.appendChild(sBrand);
-  /* Slide 3 — gift / rewards */
-  const done=Math.max(0,Math.min(total,game.unlocked-1));
-  const miles=[[10,'gmG1'],[25,'gmG2'],[50,'gmG3'],[75,'gmG4'],[total,'gmG5']];
-  let nextLocked=null,readyCount=0;
-  miles.forEach(([at0])=>{const at=Math.min(total,at0);const gotM=done>=at,claimed=!!game.claimed[at];if(gotM&&!claimed)readyCount++;if(!gotM&&nextLocked===null)nextLocked=at;});
+  /* Slide 3 — gift / rewards (score-based) */
+  const score=acc;
+  let nextTier=null,readyCount=0;
+  GIFT_TIERS.forEach(t=>{const gotT=score>=t.at,claimed=!!game.claimed['s'+t.at];if(gotT&&!claimed)readyCount++;if(!gotT&&nextTier===null)nextTier=t;});
   const sGift=el('div','gslide gslide-gift');
   const gi=el('span','ggift-icon');gi.innerHTML=readyCount?GIFT_SVG_OPEN:GIFT_SVG_LOCK;
   const gt=el('span','ggift-text');
   gt.appendChild(el('b','',UI.gmRewards));
-  gt.appendChild(el('small','',readyCount?UI.gmReadyCount.replace('{n}',String(readyCount)):(nextLocked!==null?UI.gmNextAt.replace('{n}',String(nextLocked)):UI.gmAllDone)));
+  gt.appendChild(el('small','',readyCount?UI.gmReadyCount.replace('{n}',String(readyCount)):(nextTier?('Next gift at '+nextTier.at+'% score'):'All gifts claimed')));
   sGift.appendChild(gi);sGift.appendChild(gt);
   slides.appendChild(sGift);
   bar.appendChild(slides);
@@ -569,47 +572,49 @@ function openMap(){
 const GIFT_ART=UI.giftArt||'';
 const GIFT_SVG_OPEN='<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="21" width="34" height="21" rx="4" fill="#FFCE1B"/><rect x="5" y="14" width="38" height="9" rx="3" fill="#FFE27A"/><rect x="22" y="14" width="4" height="28" fill="#D4A000"/><path d="M24 14c-3-7-11-7-10-1 .6 3 5 2 10 1zm0 0c3-7 11-7 10-1-.6 3-5 2-10 1z" fill="none" stroke="#D4A000" stroke-width="2.4" stroke-linejoin="round"/><circle cx="41" cy="8" r="2.4" fill="#FFE27A"/><circle cx="7" cy="8" r="1.8" fill="#FFE27A"/></svg>';
 const GIFT_SVG_LOCK='<svg viewBox="0 0 48 48" aria-hidden="true"><rect x="7" y="21" width="34" height="21" rx="4" fill="#5B7FBF"/><rect x="5" y="14" width="38" height="9" rx="3" fill="#8DAEE3"/><rect x="22" y="14" width="4" height="28" fill="#3E63A6"/><rect x="18" y="28" width="12" height="10" rx="2.5" fill="#E8F0FF"/><path d="M20.5 28v-3.2a3.5 3.5 0 0 1 7 0V28" fill="none" stroke="#E8F0FF" stroke-width="2.2"/></svg>';
-function buildGiftPanel(total){
-  const done=Math.max(0,Math.min(total,game.unlocked-1));
+function buildGiftPanel(){
+  const score=currentScore();
   const rw=el('aside','mhrw');
-  const rh=el('div','mhrwh');
-  const ii=el('span','mhrwic');
-  if(UI.giftIcon){const im=el('img','');im.src=UI.giftIcon;im.alt='';im.decoding='async';ii.appendChild(im);}
-  rh.appendChild(ii);
-  const rt=el('div','mhrwt');
-  rt.appendChild(el('b','',UI.gmRewards));
-  rt.appendChild(el('span','',UI.gmRewardsSub));
-  rh.appendChild(rt);
-  rw.appendChild(rh);
-  const grid=el('div','mhgifts');
-  const miles=[[10,'gmG1'],[25,'gmG2'],[50,'gmG3'],[75,'gmG4'],[total,'gmG5']];
-  const readyList=[];let nextLocked=null;
-  miles.forEach(([at0,key],idx)=>{
-    const at=Math.min(total,at0);
-    const got=done>=at,claimed=!!game.claimed[at];
-    if(got&&!claimed)readyList.push({at,key});
-    if(!got&&nextLocked===null)nextLocked=at;
-    const g=el('div','mhgift'+(got?' open':'')+(got&&!claimed?' ready':'')+(claimed?' claimed':''));
-    const ic=el('span','mhgico');ic.innerHTML=got?GIFT_SVG_OPEN:GIFT_SVG_LOCK;g.appendChild(ic);
-    const info=el('div','mhginfo');
-    const nm=el('b','',UI[key]||('Gift '+(idx+1)));
-    info.appendChild(nm);
-    info.appendChild(el('small','',UI.gmAt.replace('{n}',String(at))));
-    const bar=el('div','mhbar');const fill=el('span','');fill.style.width=Math.min(100,Math.round(done/at*100))+'%';bar.appendChild(fill);info.appendChild(bar);
-    info.appendChild(el('small','mhgst',claimed?UI.gmClaimed:(got?UI.gmReady:UI.gmLeft.replace('{n}',String(at-done)))));
-    g.appendChild(info);
-    grid.appendChild(g);
+  /* Score requirement at the very top */
+  const head=el('div','gift-score-head');
+  head.appendChild(el('div','gift-score-label','Your Score'));
+  const big=el('div','gift-score-big');big.innerHTML=score+'<small>%</small>';
+  head.appendChild(big);
+  const next=GIFT_TIERS.find(t=>!game.claimed['s'+t.at]&&score<t.at);
+  const readyList=GIFT_TIERS.filter(t=>score>=t.at&&!game.claimed['s'+t.at]);
+  head.appendChild(el('div','gift-score-next',next?('Next gift at '+next.at+'% score — RM '+next.amt):(readyList.length?'You have a gift ready to claim!':'All gifts claimed!')));
+  const bar=el('div','gift-score-bar');const fill=el('span');
+  fill.style.width=(next?Math.min(100,Math.round(score/next.at*100)):100)+'%';
+  bar.appendChild(fill);head.appendChild(bar);
+  rw.appendChild(head);
+  /* Cards that fill up gradually with score */
+  const grid=el('div','gift-cards');
+  GIFT_TIERS.forEach(t=>{
+    const claimed=!!game.claimed['s'+t.at];
+    const ready=score>=t.at&&!claimed;
+    const pct=Math.min(100,Math.round(score/t.at*100));
+    const card=el('div','gift-card '+(claimed?'claimed':ready?'ready':'locked'));
+    const fillEl=el('div','gc-fill');fillEl.style.height=pct+'%';
+    card.appendChild(fillEl);
+    card.appendChild(el('span','gc-pct',pct+'%'));
+    card.appendChild(el('div','gc-icon',t.icon));
+    card.appendChild(el('div','gc-amt','RM '+t.amt));
+    card.appendChild(el('div','gc-name',t.label));
+    card.appendChild(el('div','gc-need',t.at+'% score needed'));
+    card.appendChild(el('div','gc-status',claimed?'✓ Claimed':ready?'🎁 Ready to claim!':'🔒 '+Math.max(0,t.at-score)+'% to go'));
+    grid.appendChild(card);
   });
   rw.appendChild(grid);
+  /* Claim footer */
   const ft=el('div','mhrwf');
-  const info=readyList.length?UI.gmReadyCount.replace('{n}',String(readyList.length)):(nextLocked!==null?UI.gmNextAt.replace('{n}',String(nextLocked)):UI.gmAllDone);
+  const info=readyList.length?UI.gmReadyCount.replace('{n}',String(readyList.length)):(next?('Next gift at '+next.at+'% score'):'');
   ft.appendChild(el('span','mhrwi',info));
   const cb=el('button','btn gold mhclaim',readyList.length?UI.gmClaim:UI.gmNoClaim);
   cb.type='button';cb.disabled=!readyList.length;
   cb.addEventListener('click',()=>{
     if(!readyList.length)return;
-    const r=readyList[0];game.claimed[r.at]=true;gstore.save();
-    toast(UI.gmClaimedMsg.replace('{g}',UI[r.key]||''));
+    const t=readyList[0];game.claimed['s'+t.at]=true;gstore.save();
+    toast(UI.gmClaimedMsg.replace('{g}',t.label+' RM '+t.amt));
     renderMap();
   });
   ft.appendChild(cb);
@@ -617,6 +622,23 @@ function buildGiftPanel(total){
   return rw;
 }
 
+let mhHeroTimer=null;
+function startHeroSlider(){
+  if(mhHeroTimer)return;
+  const tick=()=>{
+    const hero=document.querySelector('.mhhero');
+    if(!hero){mhHeroTimer=null;return;}
+    const imgs=hero.querySelectorAll('.mhhero-img');
+    const dots=hero.querySelectorAll('.mhhero-dot');
+    let cur=-1;
+    imgs.forEach((im,i)=>{if(im.classList.contains('active'))cur=i;});
+    const next=(cur+1)%imgs.length;
+    imgs.forEach((im,i)=>im.classList.toggle('active',i===next));
+    dots.forEach((d,i)=>d.classList.toggle('active',i===next));
+    mhHeroTimer=setTimeout(tick,3200);
+  };
+  mhHeroTimer=setTimeout(tick,3200);
+}
 function buildMapHead(total,cont){
   const done=Math.max(0,Math.min(total,game.unlocked-1));
   const head=el('section','maphead mhpro');
@@ -630,27 +652,63 @@ function buildMapHead(total,cont){
   const next=el('div','mhnext');
   next.appendChild(el('span','mhnl',UI.gmNext));
   next.appendChild(el('b','',UI.gLevel+' '+cont+' · '+human(lv.band||'Easy')));
-  txt.appendChild(next);
-  const go=el('button','btn gold mhgo',(game.unlocked>1?UI.gContinue:UI.gStart)+' · '+UI.gLevel+' '+cont+' →');
-  go.type='button';go.addEventListener('click',()=>openLevel(cont));
-  txt.appendChild(go);
   const stat=el('div','chips mhchips');
   [UI.gLevels+' '+game.unlocked+'/'+total,QS.length+' '+UI.pill_questions].forEach(t=>stat.appendChild(el('span','chipmini',t)));
-  txt.appendChild(stat);
+  /* one line: next up + chips */
+  const meta=el('div','mhmeta');
+  meta.appendChild(next);
+  meta.appendChild(stat);
+  txt.appendChild(meta);
   main.appendChild(txt);
   head.appendChild(main);
+  /* right: 3D character slider + CTA button below */
+  const hero=el('div','mhhero');
+  const stage=el('div','mhhero-stage');
+  const heroImgs=['assets/hero/brain-hero.webp','assets/hero/trophy-hero.webp','assets/hero/owl-hero.webp'];
+  heroImgs.forEach((src,i)=>{
+    const im=el('img','mhhero-img'+(i===0?' active':''));
+    im.src=src;im.alt='';im.decoding='async';
+    stage.appendChild(im);
+  });
+  const dots=el('div','mhhero-dots');
+  heroImgs.forEach((_,i)=>dots.appendChild(el('span','mhhero-dot'+(i===0?' active':''))));
+  stage.appendChild(dots);
+  hero.appendChild(stage);
+  const go=el('button','btn gold mhgo',(game.unlocked>1?UI.gContinue:UI.gStart)+' · '+UI.gLevel+' '+cont+' →');
+  go.type='button';go.addEventListener('click',()=>openLevel(cont));
+  hero.appendChild(go);
+  head.appendChild(hero);
+  startHeroSlider();
   return head;
 }
 
-function giftReadyCount(total){
-  const done=Math.max(0,Math.min(total,game.unlocked-1));
-  return [10,25,50,75,total].reduce((n,at0)=>{const at=Math.min(total,at0);return n+((done>=at&&!game.claimed[at])?1:0);},0);
+const GIFT_TIERS=[
+  {at:30,amt:20,label:'Lucky Prize',icon:'☕'},
+  {at:40,amt:30,label:'Good Prize',icon:'🎒'},
+  {at:50,amt:50,label:'Nice Prize',icon:'💡'},
+  {at:60,amt:80,label:'Great Prize',icon:'🔊'},
+  {at:70,amt:100,label:'Big Prize',icon:'🎮'},
+  {at:80,amt:150,label:'Super Prize',icon:'⌚'},
+  {at:90,amt:200,label:'Mega Prize',icon:'🎧'},
+  {at:100,amt:360,label:'Grand Prize',icon:'📱'}
+];
+function currentScore(){
+  const ans=game.answered||0,cor=game.correct||0;
+  return ans?Math.round(cor/ans*100):0;
+}
+function giftReadyCount(){
+  const score=currentScore();
+  return GIFT_TIERS.reduce((n,t)=>n+((score>=t.at&&!game.claimed['s'+t.at])?1:0),0);
+}
+function updateGiftDock(){
+  /* Dock score is now shown by the rotating slides block (renderGameBar) */
+  renderGameBar();
 }
 function renderGifts(){
   const body=$('giftBody');if(!body)return;
-  const total=game.levels.length;
-  body.innerHTML='';body.appendChild(buildGiftPanel(total));
-  const ready=giftReadyCount(total);
+  body.innerHTML='';body.appendChild(buildGiftPanel());
+  const ready=giftReadyCount();
+  updateGiftDock();
   const dot=$('giftDot');if(dot)dot.hidden=!ready;
   const trig=$('giftBtn');
   if(trig){
@@ -859,7 +917,7 @@ function pick(i){
   else{G.lives--;G.streak=0;if(i>=0)G.wrongPicks.push(i);}
   if(G.attempts===1)game.answered=(game.answered||0)+1;
   if(right)game.correct=(game.correct||0)+1;
-  gstore.save();renderGameBar();
+  gstore.save();renderGameBar();updateGiftDock();
   // refresh header hearts/streak
   const top=document.querySelector('#gamePlay .playtop');
   if(top){
@@ -965,9 +1023,76 @@ function nextQuestion(){
   else finishLevel(true);
 }
 
+/* ===== Prize reveal: chosen mystery card bursts open, prize by score ===== */
+const PRIZE_POOL=[
+  {amt:360,label:'Grand Prize',gadget:{icon:'📱',name:'Smartphone'}},
+  {amt:200,label:'Mega Prize',gadget:{icon:'🎧',name:'Wireless Headphones'}},
+  {amt:150,label:'Super Prize',gadget:{icon:'⌚',name:'Smart Watch'}},
+  {amt:100,label:'Big Prize',gadget:{icon:'🎮',name:'Game Controller'}},
+  {amt:80,label:'Great Prize',gadget:{icon:'🔊',name:'Bluetooth Speaker'}},
+  {amt:50,label:'Nice Prize',gadget:{icon:'💡',name:'Smart Lamp'}},
+  {amt:30,label:'Good Prize',gadget:{icon:'🎒',name:'Travel Backpack'}},
+  {amt:20,label:'Lucky Prize',gadget:{icon:'☕',name:'Coffee Mug Set'}},
+  {amt:10,label:'Starter Prize',gadget:{icon:'🎁',name:'Surprise Box'}}
+];
+function prizeForScore(acc){
+  if(acc>=1) return PRIZE_POOL[0];
+  if(acc>=0.9) return PRIZE_POOL[1];
+  if(acc>=0.8) return PRIZE_POOL[2];
+  if(acc>=0.7) return PRIZE_POOL[3];
+  if(acc>=0.6) return PRIZE_POOL[4];
+  if(acc>=0.5) return PRIZE_POOL[5];
+  if(acc>=0.4) return PRIZE_POOL[6];
+  if(acc>=0.3) return PRIZE_POOL[7];
+  return PRIZE_POOL[8];
+}
+function burstParticles(container){
+  if(!container) return;
+  const colors=['#FFCE1B','#FFE082','#FFB300','#4FC3F7','#CE93D8','#fff','#2ECC71'];
+  for(let i=0;i<36;i++){
+    const p=document.createElement('span');
+    p.className='prize-particle';
+    p.style.background=colors[i%colors.length];
+    p.style.left='50%';p.style.top='42%';
+    if(i%3===0)p.style.borderRadius='50%';
+    container.appendChild(p);
+    const ang=(Math.PI*2*i)/36+Math.random()*.4;
+    const dist=120+Math.random()*220;
+    const dx=Math.cos(ang)*dist,dy=Math.sin(ang)*dist-60;
+    p.animate([
+      {transform:'translate(0,0) rotate(0deg) scale(1)',opacity:1},
+      {transform:`translate(${dx}px,${dy+160}px) rotate(${Math.random()*540-270}deg) scale(.4)`,opacity:0}
+    ],{duration:1100+Math.random()*700,easing:'cubic-bezier(.17,.67,.35,1)',delay:Math.random()*150}).onfinish=()=>p.remove();
+  }
+}
+function showPrizeReveal(acc){
+  const overlay=$('prizeOverlay');
+  if(!overlay||overlay.dataset.shown)return;
+  overlay.dataset.shown='1';
+  const prize=prizeForScore(acc);
+  $('prizeAmount').textContent='RM '+prize.amt;
+  $('prizeSub').textContent=prize.label+' · Malaysia Prize Bond';
+  $('prizeScore').textContent='Score: '+Math.round(acc*100)+'%';
+  const gad=$('prizeGadget');
+  if(prize.gadget&&acc>=0.7){
+    gad.hidden=false;
+    $('prizeGadgetIcon').textContent=prize.gadget.icon;
+    $('prizeGadgetName').textContent='+ '+prize.gadget.name;
+  } else gad.hidden=true;
+  overlay.hidden=false;
+  document.body.style.overflow='hidden';
+  burstParticles($('prizeBurst'));
+  $('prizeClose').onclick=()=>{
+    overlay.hidden=true;
+    overlay.dataset.shown='';
+    document.body.style.overflow='';
+  };
+}
+
 function finishLevel(reachedEnd){
   stopTimer();
   const lv=game.levels[G.lv-1],total=lv.qs.length,acc=G.correct/total;
+  if(window.__chosenPrizeCard){setTimeout(()=>showPrizeReveal(acc),900);}
   let stars=0;
   if(reachedEnd&&G.lives>0){ if(acc===1&&G.lives===HEARTS)stars=3; else if(acc>=0.8)stars=2; else if(acc>=0.6)stars=1; }
   const gained=G.correct*10+(stars===3?30:stars===2?15:stars===1?5:0);
@@ -1032,6 +1157,7 @@ function initGame(){
   buildLevels();gstore.load();
   $('tabGame').addEventListener('click',()=>setMode('game'));
   $('tabBrowse').addEventListener('click',()=>setMode('browse'));
+  $('tabDesign').addEventListener('click',()=>setMode('design'));
   renderGameBar();renderMap();
   let m='game';
   try{m=localStorage.getItem('amQuizMode')||'game';}catch(e){}

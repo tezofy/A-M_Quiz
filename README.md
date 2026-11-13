@@ -1,108 +1,169 @@
 # Advertising & More — Interactive Quiz
 
-একটি ইন্টার‌্যাক্টিভ কুইজ ওয়েব অ্যাপ — **903টি প্রশ্ন**, 5টি সেকশন, 44টি ব্লক।
-গেম মোড (লেভেল, লাইভ, স্ট্রিক, XP) + ব্রাউজ মোড (সব প্রশ্ন খুঁজে দেখা)।
-
 An interactive quiz web app with **903 questions** across 5 sections and 44 blocks.
-Game mode (levels, lives, streaks, XP) + Browse mode (search all questions).
+Features Game mode (levels, lives, streaks, XP), Browse mode (search all questions),
+Design Lab (website feedback), and NFC Digital Business Card.
 
 ---
 
-## 📁 Project Structure / ফাইল কাঠামো
+## 📁 Project Structure
 
 ```
 advertising-and-more-quiz/
-├── index.html                  ← মূল পেজ (splash + app shell)
-├── README.md                   ← এই ফাইল
+├── index.html                  ← Main page (splash + app shell)
+├── README.md                   ← This file
 ├── css/
-│   └── style.css               ← সব স্টাইল (রঙ, লেআউট, অ্যানিমেশন)
+│   └── style.css               ← All styles (colors, layout, animations)
 ├── js/
-│   ├── ui-data.js              ← UI টেক্সট/লেবেল + topic art (window.UI_DATA)
-│   ├── meta-data.js            ← মেটাডেটা: coverage, quotes, sections
-│   ├── questions-s1.js         ← S1 · Main website (251 প্রশ্ন)
-│   ├── questions-s2.js         ← S2 · Party Rentals & Services (450 প্রশ্ন)
-│   ├── questions-s3.js         ← S3 · Careers / Job Vacancies (145 প্রশ্ন)
-│   ├── questions-s4.js         ← S4 · Thinkers' quotes (40 প্রশ্ন)
-│   ├── questions-s5.js         ← S5 · Cross-page comparison (17 প্রশ্ন)
-│   ├── app.js                  ← মূল লজিক (গেম, ব্রাউজ, রেন্ডারিং)
-│   └── splash.js               ← splash স্ক্রিন + sticky stats
-└── assets/                     ← সব ইমেজ এখানে
-    ├── coffee-cup.png          ← A&M ব্র্যান্ড লোগো
-    ├── quiz-brain-icon.png     ← কুইজ আইকন
-    ├── topics/                 ← 10টি topic art (web, brands, stats, quotes,
-    │                             services, campaigns, contact, faq,
-    │                             careers, compare)
-    ├── chapters/               ← 7টি chapter art (chapter-1 … chapter-7)
-    └── gifts/                  ← gift-art, gift-icon, gift-mystery
+│   ├── ui-data.js              ← UI text/labels + topic art (window.UI_DATA)
+│   ├── meta-data.js            ← Metadata: coverage, quotes, sections
+│   ├── questions-s1.js         ← S1 · Main website (251 questions)
+│   ├── questions-s2.js         ← S2 · Party Rentals & Services (450 questions)
+│   ├── questions-s3.js         ← S3 · Careers / Job Vacancies (145 questions)
+│   ├── questions-s4.js         ← S4 · Thinkers' quotes (40 questions)
+│   ├── questions-s5.js         ← S5 · Cross-page comparison (17 questions)
+│   ├── app.js                  ← Main logic (game, browse, rendering, prizes)
+│   ├── splash.js               ← Splash screen + gift selection + sticky stats
+│   └── design-lab.js           ← Design Lab feedback + NFC business card
+└── assets/                     ← All images here
+    ├── coffee-cup.png          ← A&M brand logo
+    ├── quiz-brain-icon.png     ← Brain icon
+    ├── tab-game.webp           ← Mode tab icons
+    ├── tab-browse.webp
+    ├── tab-design.webp         ← Design Lab tab icon
+    ├── gift-button.webp        ← Gift button icon
+    ├── gifts/                  ← Gift images
+    │   ├── gift-splash.webp    ← Rotating gift (splash)
+    │   ├── gift-art.webp
+    │   ├── gift-mystery.webp
+    │   ├── gift-icon.webp
+    │   └── card-gift-*.webp    ← Gift card images
+    ├── topics/                 ← Topic art (10 images)
+    ├── chapters/               ← Chapter art (7 images)
+    └── gifts/                  ← Gift art (3 images)
 ```
 
 ---
 
-## ✏️ How to Edit / কীভাবে এডিট করবেন
+## 🎮 Features
 
-### প্রশ্ন যোগ/বদলানো (Questions)
-`js/questions-s1.js` (বা s2–s5) ফাইলে প্রতিটি প্রশ্ন এক লাইনে JSON হিসেবে আছে:
+### User Flow
+1. **Splash Screen** — Blue gradient with rotating gift box + floating gift icons
+2. **Gift Selection** — Pick 1 of 9 mystery cards (3×3 grid). Card shakes, flips, and is locked in
+3. **Quiz** — Play levels, earn XP and stars
+4. **Prize Reveal** — After level ends, chosen card bursts open revealing a Malaysia Prize Bond (RM 10–360) based on your score, plus gadget bonuses for high scores
 
-```json
-{"block": "S1-01", "section": "S1", "section_title": "S1 · Main website — advertisingandmore.com", "block_title": "Header, navigation and hero", "question": "Which item is NOT in the main site's header navigation?", "options": ["Services", "Contact", "Careers", "Home"], "answer_letter": "C", "answer_text": "Careers", "why": "...", "difficulty": "Easy", "type": "mcq", "source_url": "https://advertisingandmore.com/", "id": "S1-01-Q1", "difficulty_key": "easy"}
-```
+### Game Mode
+- 91 levels across 7 chapters
+- 3 lives (hearts) per level
+- 30-second timer per question (toggleable)
+- Streaks, XP, ranks (Rookie → Legend)
+- Rotating game bar slides (Score → Brand → Gift milestones)
 
-- `answer_letter`: সঠিক উত্তরের অক্ষর (`A` / `B` / `C` / `D`)
-- `why`: ব্যাখ্যা (ঐচ্ছিক — খালি রাখা যায়)
-- নতুন প্রশ্ন যোগ করতে: লাইনের শেষে কমা (`,`) দিয়ে নতুন লাইন যোগ করুন
+### Browse Mode
+- Search all 903 questions
+- Filter by section, difficulty, answered status
+- Reveal/hide answers
+- Share questions via deep links
 
-### UI টেক্সট বদলানো (Labels)
-`js/ui-data.js` — সব বাটন/লেবেল/মেসেজ এখানে।
+### Design Lab
+- Review 6 website blocks (Logo, Hero, Services, Email Signature, Colors, Typography)
+- Rate each block (😞 to 🤩)
+- Submit design suggestions and ideas
+- Earn **+50 XP** per feedback
+- Export feedback as JSON
+- Data stored in localStorage
 
-### স্টাইল বদলানো (Styles)
-`js/../css/style.css` — রঙ, ফন্ট, অ্যানিমেশন সব এখানে।
-
-### লজিক বদলানো (Game logic)
-`js/app.js` — গেম ফ্লো, স্কোরিং, popup, টাইমার।
+### NFC Business Card
+- Digital business card with contact details
+- **NFC share** (Web NFC API — Android Chrome)
+- **QR code** generation (scan to save contact)
+- **Download** vCard (.vcf) file
+- Fallback to Web Share API where NFC unavailable
 
 ---
 
-## 🚀 Run Locally / লোকালে চালানো
+## 🚀 Run Locally
 
 ```bash
-# যেকোনো static server ব্যবহার করুন
+# Start a local server
 python3 -m http.server 8000
-# তারপর ব্রাউজারে খুলুন: http://localhost:8000
+
+# Open in browser
+# http://localhost:8000
 ```
 
-> ⚠️ `index.html`-এ ডাবল-ক্লিক করে `file://` দিয়ে খুললে কিছু ব্রাউজার
-> external JS লোড আটকাতে পারে — তাই local server ব্যবহার করুন।
+Or use any static server (Node, PHP, etc.).
 
 ---
 
-## 🌐 Deploy to GitHub Pages / গিটহাবে পাবলিশ
+## 📤 Deploy to GitHub Pages
 
-1. GitHub-এ নতুন রিপোজিটরি তৈরি করুন (যেমন: `advertising-and-more-quiz`)
-2. এই ফোল্ডারের সব ফাইল আপলোড করুন (Add file → Upload files)
-3. **Settings → Pages** → Source: `Deploy from a branch` → Branch: `main` / `(root)`
-4. 1–2 মিনিটে সাইট লাইভ হবে: `https://YOUR-USERNAME.github.io/advertising-and-more-quiz/`
-
----
-
-## 🎮 Features / ফিচারসমূহ
-
-- **Splash screen** — "Click For Start" দিয়ে শুরু
-- **Game mode** — 7টি chapter, লেভেল সিস্টেম, 3টি lives (♥), 30-সেকেন্ড টাইমার
-- **Answer popup** — সঠিক হলে সবুজ popup → পরবর্তী প্রশ্ন; ভুল হলে "Try again" popup
-- **3D flip card** — প্রশ্ন পেজে icon/logo coin-এর মতো ঘুরবে
-- **Rotating stats bar** — Score / Brand / Gift স্লাইড ঘুরবে
-- **Browse mode** — 903 প্রশ্ন সার্চ/ফিল্টার করে দেখা
-- **Progress save** — localStorage-এ XP, stars, unlock সেভ থাকে
+1. Create a new GitHub repository
+2. Upload all files (maintain folder structure)
+3. Go to **Settings → Pages**
+4. Select branch `main` and folder `/ (root)`
+5. Your site will be live at `https://<username>.github.io/<repo-name>/`
 
 ---
 
-## 📊 Quiz Data / প্রশ্নের পরিসংখ্যান
+## ✏️ Editing Guide
 
-| Section | বিষয় | প্রশ্ন |
-|---------|------|-------|
-| S1 | Main website — advertisingandmore.com | 251 |
-| S2 | Party Rentals & Services | 450 |
-| S3 | Careers / Job Vacancies | 145 |
-| S4 | Thinkers' quotes | 40 |
-| S5 | Cross-page comparison | 17 |
-| **মোট** | | **903** |
+### Change UI Text
+Edit `js/ui-data.js` — all labels, buttons, and messages are there.
+
+### Add Questions
+Add to the appropriate `js/questions-s*.js` file. Each question:
+```js
+{ id:'Q0001', sec:'S1', block:'S1-01', diff:'Easy', q:'Question?', opts:['A','B','C','D'], a:0, why:'Explanation' }
+```
+- `a` = correct answer index (0=A, 1=B, 2=C, 3=D)
+
+### Change Colors
+Edit CSS variables in `css/style.css`:
+```css
+:root {
+  --brand:#0049A8;        /* Primary blue */
+  --brand-dark:#00357C;   /* Dark blue */
+  --brand-light:#0B62CC;  /* Light blue */
+  --gold:#FFCE1B;         /* Gold accent */
+}
+```
+
+### Add Design Lab Blocks
+Edit `DL_BLOCKS` array in `js/design-lab.js`.
+
+### Change Prize Pool
+Edit `PRIZE_POOL` array in `js/app.js` — 9 prizes totaling RM 1000.
+
+---
+
+## 📊 Quiz Statistics
+
+| Section | Questions | Topic |
+|---------|-----------|-------|
+| S1 | 251 | Main website |
+| S2 | 450 | Party Rentals & Services |
+| S3 | 145 | Careers / Job Vacancies |
+| S4 | 40 | Thinkers' quotes |
+| S5 | 17 | Cross-page comparison |
+| **Total** | **903** | |
+
+- Difficulty: Easy 232 · Medium 494 · Hard 177
+- 91 levels · 7 chapters · 44 blocks
+
+---
+
+## 🔧 Tech Stack
+
+- Pure HTML, CSS, JavaScript (no frameworks)
+- Web NFC API (progressive enhancement)
+- LocalStorage for progress & feedback
+- WebP images for optimal loading
+- Fully responsive (mobile-first)
+
+---
+
+## 📝 License
+
+© 2026 Advertising & More Sdn. Bhd. All rights reserved.
